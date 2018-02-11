@@ -1,0 +1,86 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<context:property-placeholder
+		ignore-resource-not-found="false" location="*.conf" />
+
+	<bean id="dataSourceBusinessMaster" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+		destroy-method="close">
+		<property name="driverClass" value="com.mysql.jdbc.Driver" />
+		<property name="jdbcUrl" value="${jdbc_business_master_url}" />
+		<property name="user" value="${jdbc_business_master_username}" />
+		<property name="password" value="${jdbc_business_master_password}" />
+		<property name="maxPoolSize" value="30" />
+		<property name="minPoolSize" value="1" />
+		<property name="initialPoolSize" value="${tableCompareTool_threads}" />
+		<property name="maxIdleTime" value="120" />
+		<property name="maxStatements" value="0" />
+		<property name="checkoutTimeout" value="10000" />
+		<property name="autoCommitOnClose" value="true" />
+		<property name="idleConnectionTestPeriod" value="60" />
+		<property name="testConnectionOnCheckout" value="true" />
+		<!--property name="automaticTestTable" value="t_c3p0"/ -->
+		<property name="preferredTestQuery" value="select 1" />
+		<property name="acquireIncrement" value="2" />
+		<property name="maxIdleTimeExcessConnections" value="60" />
+	</bean>
+
+	<bean id="dataSourceBusinessSlave" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+		destroy-method="close">
+		<property name="driverClass" value="com.mysql.jdbc.Driver" />
+		<property name="jdbcUrl" value="${jdbc_business_slave_url}" />
+		<property name="user" value="${jdbc_business_slave_username}" />
+		<property name="password" value="${jdbc_business_slave_password}" />
+		<property name="maxPoolSize" value="30" />
+		<property name="minPoolSize" value="1" />
+		<property name="initialPoolSize" value="${tableCompareTool_threads}" />
+		<property name="maxIdleTime" value="120" />
+		<property name="maxStatements" value="0" />
+		<property name="checkoutTimeout" value="10000" />
+		<property name="autoCommitOnClose" value="true" />
+		<property name="idleConnectionTestPeriod" value="60" />
+		<property name="testConnectionOnCheckout" value="true" />
+		<!--property name="automaticTestTable" value="t_c3p0"/ -->
+		<property name="preferredTestQuery" value="select 1" />
+		<property name="acquireIncrement" value="2" />
+		<property name="maxIdleTimeExcessConnections" value="60" />
+	</bean>
+
+	<bean id="jdbcTemplateMaster" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource">
+			<ref bean="dataSourceBusinessMaster" />
+		</property>
+	</bean>
+
+	<bean id="jdbcTemplateSlave" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource">
+			<ref bean="dataSourceBusinessSlave" />
+		</property>
+	</bean>
+
+	<bean id="dao" class="com.syniverse.daoImpl">
+		<property name="tableName" value="${tableCompareTool_tableName}" />
+		<property name="keyColumn" value="${tableCompareTool_keyColumn}" />
+		<property name="rows" value="${tableCompareTool_rows}" />
+		<property name="compareColumns" value="${tableCompareTool_compareColumns}" />
+		<property name="startPoint" value="${tableCompareTool_startpoint:0}" />
+		<property name="maxFoundLimit" value="${tableCompareTool_stopAtMaxFound:100000}" />
+		<property name="master">
+			<ref bean="jdbcTemplateMaster" />
+		</property>
+		<property name="slave">
+			<ref bean="jdbcTemplateSlave" />
+		</property>
+	</bean>
+
+	<bean id="mainClass" class="com.syniverse.TableCompareTool">
+		<property name="threads" value="${tableCompareTool_threads}" />
+		<property name="waitSeconds" value="${tableCompareTool_waitconfirm:5}" />
+		<property name="dao">
+			<ref bean="dao" />
+		</property>
+	</bean>
+</beans>
